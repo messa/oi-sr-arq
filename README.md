@@ -24,7 +24,7 @@ Course AE4B33OSS at Czech Technical Univerzity, Faculty of Electrical Engineerin
 > Klient před každou zprávu přidá hlavičku, která bude obsahovat dva bajty sekvenčního
 > čísla. Pro posílání zpráv využijte soketu typu Datagram. Všechny posílané zprávy budou
 > mít pevnou délku. Program klient podle generátoru náhodných čísel buď zprávu s
-> pravděpodobností 0.9 vpořádku odešle, nebo s pravděpodobností 0.1 bude simulovat výpadek
+> pravděpodobností 0.9 v pořádku odešle, nebo s pravděpodobností 0.1 bude simulovat výpadek
 > telegramu (tedy neodešle žádný bajt zprávy).
 >
 > Program server přijímá telegramy a vysílá potvrzení o jejich přijetí. Server také podle
