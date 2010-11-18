@@ -33,16 +33,21 @@ class Network:
     """
 
     def __init__(self, context):
+        import random
         self.context = context
         self.frames = list()
         self.travelTime = 3
+        self.random = random.Random(42)
 
     def send(self, src, target, frame):
         """
         Send a frame to target.
         """
-        self.context.log("NETWORK: %s sends %s to %s" % (src, frame, target))
-        self.frames.append((self.context.get_time(), target, frame))
+        if self.random.uniform(0, 1) < 0.1:
+            self.context.log("NETWORK: %s sends %s to %s, but DROPPED" % (src, frame, target))
+        else:
+            self.context.log("NETWORK: %s sends %s to %s" % (src, frame, target))
+            self.frames.append((self.context.get_time(), target, frame))
 
     def recv(self, side):
         """
