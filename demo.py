@@ -6,6 +6,7 @@ Selective Repeat ARQ simulation.
 """
 
 WINDOW_SIZE = 5
+NETWORK_DELAY_TIME = 3
 NETWORK_ERROR_RATE = 0.2
 ACK_WAIT_TIMEOUT = 10
 
@@ -44,7 +45,6 @@ class Network:
         import random
         self.context = context
         self.frames = list()
-        self.travelTime = 3
         self.random = random.Random(42)
 
     def send(self, src, target, frame):
@@ -66,10 +66,10 @@ class Network:
         for timeSent, target, frame in self.frames:
             if target != side:
                 continue
-            if timeSent >= self.context.get_time() - self.travelTime:
+            if timeSent >= self.context.get_time() - NETWORK_DELAY_TIME:
                 continue
-            if self.random.uniform(0, 1) < 0.6:
-                continue  # simulated network delay
+            if self.random.uniform(0, 1) < 0.5:
+                continue  # simulated additional network delay
             received.append(frame)
         if received:
             self.frames = [(timeSent, target, frame)  # delete received frames from
@@ -123,10 +123,14 @@ class Sender:
         self.side = side
         self.targetSide = targetSide
         self.messagesToSend = list()
+
         self.window = Window()
         self.receiverWaitingSeq = 0  # seq number that the receiver is waiting for
                         # - sequence number of the earliest frame it has not received
         self.nextSeq = 0  # seq number that will be assigned to the next sent message
+
+        self.ackFramesReceived = 0  # for stats
+        self.messageFramesSent = 0
 
     def add_messages(self, messages):
         self.messagesToSend.extend(messages)
@@ -137,30 +141,19 @@ class Sender:
         return seq
 
     def run(self):
-        # fill the window with messages to send
-        if not self.window.full() and self.messagesToSend:
-            message = self.messagesToSend.pop(0)
-            seq = self._next_seq()
-            frame = (seq, message)
-            self.network.send(self.side, self.targetSide, frame)
-            self.window.add(seq, {
-                "firstSent": self.context.get_time(),
-                "lastSent": self.context.get_time(),
-                "message": message,
-            })
-            return
-
         resend = False
 
         # process frames (ACKs) from receiver
         frames = self.network.recv(self.side)
         for _, waitingSeq in frames:
+            self.ackFramesReceived += 1
             self.context.log("Sender: got ACK with waitingSeq=%r; our " \
                 "receiverWaitingSeq was %r" % (waitingSeq, self.receiverWaitingSeq))
             if waitingSeq == self.receiverWaitingSeq:
                 # acked something that was acked already
-                self.context.log("Sender: resending")
-                resend = True
+                if self.window.has(self.receiverWaitingSeq):
+                    self.context.log("Sender: resending")
+                    resend = True
             else:
                 while waitingSeq > self.receiverWaitingSeq:
                     self.context.log("Sender: removing message %r seq=%r from window" \
@@ -177,11 +170,27 @@ class Sender:
             self.context.log("Sender: timeout expired; resending")
             resend = True
 
+        # fill the window with messages to send
+        if not resend and not self.window.full() and self.messagesToSend:
+            message = self.messagesToSend.pop(0)
+            seq = self._next_seq()
+            frame = (seq, message)
+            self.network.send(self.side, self.targetSide, frame)
+            self.messageFramesSent += 1
+            self.window.add(seq, {
+                "firstSent": self.context.get_time(),
+                "lastSent": self.context.get_time(),
+                "message": message,
+            })
+            return
+
+
         if resend and self.window.has(self.receiverWaitingSeq):
             data = self.window.get(self.receiverWaitingSeq)
             frame = (self.receiverWaitingSeq, data["message"])
             data["lastSent"] = self.context.get_time()
             self.network.send(self.side, self.targetSide, frame)
+            self.messageFramesSent += 1
 
 
 class Receiver:
@@ -192,8 +201,12 @@ class Receiver:
         self.side = side
         self.senderSide = senderSide
         self.receivedMessages = list()
+
         self.window = Window()
         self.waitingForSeq = 0
+
+        self.ackFramesSent = 0  # for stats
+        self.messageFramesReceived = 0
 
     def get_received(self):
         return tuple(self.receivedMessages)
@@ -203,6 +216,7 @@ class Receiver:
 
         frames = self.network.recv(self.side)
         for seq, message in frames:
+            self.messageFramesReceived += 1
             sendAck = True
             if seq >= self.waitingForSeq:
                 if not self.window.has(seq):
@@ -227,6 +241,7 @@ class Receiver:
         if sendAck:
             frame = ("ACK", self.waitingForSeq)
             self.network.send(self.side, self.senderSide, frame)
+            self.ackFramesSent += 1
 
 
 def main():
@@ -257,7 +272,20 @@ def main():
         print "  Should be received: %s" % str(messages)
         import sys
         sys.exit(1)
-
+    print ""
+    print "Stats:"
+    print "  Messages transferred: %s" % len(received)
+    print "  ACK frames sent: %s, received: %s, loss: %.2f %%" % \
+        (receiver.ackFramesSent, sender.ackFramesReceived, \
+         100 - 100.0 * sender.ackFramesReceived / receiver.ackFramesSent)
+    print "  Message frames sent: %s, received: %s, loss: %.2f %%" % \
+        (sender.messageFramesSent, receiver.messageFramesReceived, \
+         100 - 100.0 * receiver.messageFramesReceived / sender.messageFramesSent)
+    print "  Duplicate message frames sent: %s (%.2f %%), received: %s (%.2f %%)" % \
+        (sender.messageFramesSent - len(messages),
+         100 - 100.0 * len(messages) / sender.messageFramesSent,
+         receiver.messageFramesReceived - len(messages),
+         100 - 100.0 * len(messages) / receiver.messageFramesReceived)
 
 
 if __name__ == "__main__":
