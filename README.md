@@ -2,7 +2,11 @@
  School project: Implementation of Selective Repeat ARQ using UDP in C on Unix
 ===============================================================================
 
-Course AE4B33OSS at Czech Technical Univerzity, Faculty of Electrical Engineering.
+Course [AE4B33OSS][OSS] at Czech Technical Univerzity, [Faculty of Electrical Engineering][FEE].
+
+
+[OSS]: http://www.feld.cvut.cz/cz/education/bk/predmety/12/82/p12820104.html
+[FEE]: http://www.fel.cvut.cz/
 
 
  Assignment (in Czech language)
