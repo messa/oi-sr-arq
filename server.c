@@ -3,8 +3,50 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/socket.h>
 
 #include "networking.h"
+
+
+/*
+ * Returns hexadecimal representation of some binary string.
+ */
+static char* hexdump(const char *ptr, int size) {
+    static char buf[1024];
+    int pos = 0;
+    int i;
+    memset(&buf, 0, sizeof(buf));
+    for (i = 0; i < size; i++) {
+        if (pos > sizeof(buf) - 10) {
+            buf[pos++] = '.';
+            buf[pos++] = '.';
+            buf[pos++] = '.';
+            break;
+        }
+        if (i > 0) {
+            buf[pos++] = ' ';
+        }
+        int n = snprintf(buf + pos, sizeof(buf) - pos, "%02x", (unsigned char) ptr[i]);
+        pos += n;
+    }
+    buf[pos] = '\0';
+    return buf;
+}
+
+
+void run_server(int listenSocket) {
+    char buf[1500];
+    ssize_t n;
+    struct sockaddr_storage addr;
+    socklen_t addrLen = sizeof(addr);
+
+    for (;;) {
+        n = recvfrom(listenSocket, buf, sizeof(buf), 0, (struct sockaddr*) &addr, &addrLen);
+
+        printf("Received %s from %s\n", hexdump(buf, n),
+            name_from_addr((struct sockaddr *) &addr, addrLen));
+    }
+}
 
 
 struct ServerOptions {
@@ -25,6 +67,7 @@ int main(int argc, char *argv[]) {
     process_arguments(argc, argv, &options);
 
     int s = udp_server_socket(options.host, options.port);
+    run_server(s);
 
     return 0;
 }
