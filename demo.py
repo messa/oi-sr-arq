@@ -178,7 +178,6 @@ class Sender:
             self.network.send(self.side, self.targetSide, frame)
             self.messageFramesSent += 1
             self.window.add(seq, {
-                "firstSent": self.context.get_time(),
                 "lastSent": self.context.get_time(),
                 "message": message,
             })
@@ -214,11 +213,12 @@ class Receiver:
     def run(self):
         sendAck = False
 
-        frames = self.network.recv(self.side)
-        for seq, message in frames:
+        # process incoming message frames
+        for seq, message in self.network.recv(self.side):
             self.messageFramesReceived += 1
             sendAck = True
             if seq >= self.waitingForSeq:
+                # add message to window (if not already there)
                 if not self.window.has(seq):
                     self.window.add(seq, message)
                     self.context.log("Receiver: message %r (seq %r) added to window" \
@@ -230,6 +230,7 @@ class Receiver:
                 self.context.log("Receiver: message %r (seq %r) already accepted "\
                     "(ignoring)" % (message, seq))
 
+        # remove frames from window
         while self.window.has(self.waitingForSeq):
             message = self.window.pop(self.waitingForSeq)
             self.receivedMessages.append(message)
