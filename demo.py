@@ -19,7 +19,7 @@ class Context:
 
     def __init__(self):
         self.time = 0
-        self.lastSecondLogged = None
+        self.lastTimeLogged = None
 
     def get_time(self):
         return self.time
@@ -28,11 +28,11 @@ class Context:
         self.time += 1
 
     def log(self, s):
-        if self.lastSecondLogged == self.get_time():
+        if self.lastTimeLogged == self.get_time():
             t = ""
         else:
             t = self.get_time()
-            self.lastSecondLogged = t
+            self.lastTimeLogged = t
         print "%4s  %s" % (t, s)
 
 
@@ -245,6 +245,11 @@ class Receiver:
 
 
 def main():
+    import optparse
+    op = optparse.OptionParser()
+    op.add_option("-v", "--verbose", dest="verbose", default=False, action="store_true")
+    (options, args) = op.parse_args()
+
     context = Context()
     network = Network(context=context)
     sender = Sender(context=context, network=network, side="Sender", targetSide="Receiver")
@@ -257,6 +262,11 @@ def main():
         # cooperative multitasking :)
         sender.run()
         receiver.run()
+
+        if options.verbose and context.lastTimeLogged != context.get_time():
+            if receiver.get_received() != messages:
+                context.log(".")
+
         context.tick()
 
         if context.get_time() > 10000:
