@@ -90,16 +90,14 @@ int udp_client_socket(const char *host, const char *port) {
 const char* name_from_addr(const struct sockaddr *sa, socklen_t saLength) {
     static char buffer[NI_MAXHOST + 1 + NI_MAXSERV + 1];
     char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
-    int e;
-    buffer[0] = '\0';
-    e = getnameinfo(
+    int e = getnameinfo(
         sa, saLength,
         hbuf, sizeof(hbuf),
         sbuf, sizeof(sbuf),
         NI_NUMERICHOST | NI_NUMERICSERV);
     if (e != 0) {
         fprintf(stderr, "getnameinfo failed: %s\n", gai_strerror(e));
-        return buffer;
+        return NULL;
     }
     snprintf(buffer, sizeof(buffer), "%s:%s", hbuf, sbuf);
     return buffer;
