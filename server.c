@@ -9,6 +9,13 @@
 
 
 /*
+TODO:
+  - random frame dropping
+  - cycling seq numbers
+*/
+
+
+/*
  * Returns hexadecimal representation of some binary string.
  */
 static char* hexdump(const char *ptr, int size) {
@@ -34,17 +41,93 @@ static char* hexdump(const char *ptr, int size) {
 }
 
 
+/* I want the seq numbers to be human readable and writable, for easy testing */
+static int read_seq(const char *data) {
+    int i, seq = 0;
+    for (i = 0; i < 2; i++) {
+        if (data[i] < '0' || data[i] > '9') {
+            return -1; // invalid number
+        }
+        seq *= 10;
+        seq += data[i] - '0';
+    }
+    return seq;
+}
+
+
+void write_seq(char *buffer, int seq) {
+    buffer[0] = (seq / 10) + '0';
+    buffer[1] = (seq % 10) + '0';
+}
+
+
+struct WindowItem {
+    int seq;
+    int length;
+    char message[200];
+};
+
+
 void run_server(int listenSocket) {
-    char buf[1500];
-    ssize_t n;
-    struct sockaddr_storage addr;
-    socklen_t addrLen = sizeof(addr);
+    int waitingForSeq = 0;
+
+    #define WINDOW_SIZE 8
+    struct WindowItem window[WINDOW_SIZE];
+
+    {
+        int i;
+        for (i = 0; i < WINDOW_SIZE; i++) {
+            window[i].seq = -1;
+        }
+    }
 
     for (;;) {
+        char buf[1500];
+        int seq;
+        ssize_t n;
+        struct sockaddr_storage addr;
+        socklen_t addrLen = sizeof(addr);
+
+        // receive frame
         n = recvfrom(listenSocket, buf, sizeof(buf), 0, (struct sockaddr*) &addr, &addrLen);
 
-        printf("Received %s from %s\n", hexdump(buf, n),
+        fprintf(stderr, "Received %s from %s\n", hexdump(buf, n),
             name_from_addr((struct sockaddr *) &addr, addrLen));
+
+        if (n < 2) {
+            fprintf(stderr, "Frame is too short\n");
+            continue;
+        }
+
+        seq = read_seq(buf);
+        if (seq == -1) {
+            fprintf(stderr, "Invalid seq\n");
+            continue;
+        }
+        fprintf(stderr, "Got frame with seq %d\n", seq);
+
+        if (seq >= waitingForSeq && seq < waitingForSeq + WINDOW_SIZE) {
+            /* save to the window */
+            if (window[seq % WINDOW_SIZE].seq != seq) {
+                fprintf(stderr, "Saving seq %d to the window\n", seq);
+                window[seq % WINDOW_SIZE].seq = seq;
+                window[seq % WINDOW_SIZE].length = n-2;
+                memcpy(window[seq % WINDOW_SIZE].message, buf+2, n-2);
+            }
+        }
+
+        while (window[waitingForSeq % WINDOW_SIZE].seq == waitingForSeq) {
+            fwrite(window[waitingForSeq % WINDOW_SIZE].message, window[waitingForSeq % WINDOW_SIZE].length, 1, stdout);
+            fflush(stdout);
+            waitingForSeq++;
+        }
+
+        // send ACK
+        {
+            char ackBuf[2];
+            write_seq(ackBuf, waitingForSeq);
+            n = sendto(listenSocket, ackBuf, 2, 0, (struct sockaddr*) &addr, addrLen);
+        }
     }
 }
 
