@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 
+#include "configuration.h"
 #include "networking.h"
 
 
@@ -44,7 +45,7 @@ static char* hexdump(const char *ptr, int size) {
 /* I want the seq numbers to be human readable and writable, for easy testing */
 static int read_seq(const char *data) {
     int i, seq = 0;
-    for (i = 0; i < 2; i++) {
+    for (i = 0; i < SEQ_NUMBER_SIZE; i++) {
         if (data[i] < '0' || data[i] > '9') {
             return -1; // invalid number
         }
@@ -55,23 +56,25 @@ static int read_seq(const char *data) {
 }
 
 
-void write_seq(char *buffer, int seq) {
-    buffer[0] = (seq / 10) + '0';
-    buffer[1] = (seq % 10) + '0';
+static void write_seq(char *buffer, int seq) {
+    int i;
+    for (i = SEQ_NUMBER_SIZE - 1; i >= 0; i--) {
+        buffer[i] = (seq % 10) + '0';
+        seq /= 10;
+    }
 }
 
 
 struct WindowItem {
     int seq;
     int length;
-    char message[200];
+    char message[MESSAGE_SIZE];
 };
 
 
 void run_server(int listenSocket) {
     int waitingForSeq = 0;
 
-    #define WINDOW_SIZE 8
     struct WindowItem window[WINDOW_SIZE];
 
     {
@@ -82,7 +85,7 @@ void run_server(int listenSocket) {
     }
 
     for (;;) {
-        char buf[1500];
+        char buf[SEQ_NUMBER_SIZE + WINDOW_SIZE + 1];
         int seq;
         ssize_t n;
         struct sockaddr_storage addr;
@@ -94,8 +97,12 @@ void run_server(int listenSocket) {
         fprintf(stderr, "Received %s from %s\n", hexdump(buf, n),
             name_from_addr((struct sockaddr *) &addr, addrLen));
 
-        if (n < 2) {
+        if (n < SEQ_NUMBER_SIZE) {
             fprintf(stderr, "Frame is too short\n");
+            continue;
+        }
+        if (n == sizeof(buf)) {
+            fprintf(stderr, "Frame is too long\n");
             continue;
         }
 
@@ -111,8 +118,8 @@ void run_server(int listenSocket) {
             if (window[seq % WINDOW_SIZE].seq != seq) {
                 fprintf(stderr, "Saving seq %d to the window\n", seq);
                 window[seq % WINDOW_SIZE].seq = seq;
-                window[seq % WINDOW_SIZE].length = n-2;
-                memcpy(window[seq % WINDOW_SIZE].message, buf+2, n-2);
+                window[seq % WINDOW_SIZE].length = n-SEQ_NUMBER_SIZE;
+                memcpy(window[seq % WINDOW_SIZE].message, buf+SEQ_NUMBER_SIZE, n-SEQ_NUMBER_SIZE);
             }
         }
 
@@ -124,9 +131,9 @@ void run_server(int listenSocket) {
 
         // send ACK
         {
-            char ackBuf[2];
+            char ackBuf[SEQ_NUMBER_SIZE];
             write_seq(ackBuf, waitingForSeq);
-            n = sendto(listenSocket, ackBuf, 2, 0, (struct sockaddr*) &addr, addrLen);
+            n = sendto(listenSocket, ackBuf, sizeof(ackBuf), 0, (struct sockaddr*) &addr, addrLen);
         }
     }
 }

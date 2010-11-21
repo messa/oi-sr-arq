@@ -1,0 +1,14 @@
+
+#ifndef CONFIGURATION_H
+#define CONFIGURATION_H
+
+
+#define SEQ_NUMBER_SIZE 2
+#define MESSAGE_SIZE 200
+
+#define WINDOW_SIZE 8
+
+
+#endif /* CONFIGURATION_H */
+
+
