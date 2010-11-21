@@ -7,6 +7,7 @@
 
 #include "configuration.h"
 #include "networking.h"
+#include "window.h"
 
 
 /*
@@ -47,7 +48,7 @@ static int read_seq(const char *data) {
     int i, seq = 0;
     for (i = 0; i < SEQ_NUMBER_SIZE; i++) {
         if (data[i] < '0' || data[i] > '9') {
-            return -1; // invalid number
+            return -1; /* invalid number */
         }
         seq *= 10;
         seq += data[i] - '0';
@@ -65,33 +66,20 @@ static void write_seq(char *buffer, int seq) {
 }
 
 
-struct WindowItem {
-    int seq;
-    int length;
-    char message[MESSAGE_SIZE];
-};
-
-
 void run_server(int listenSocket) {
     int waitingForSeq = 0;
 
-    struct WindowItem window[WINDOW_SIZE];
-
-    {
-        int i;
-        for (i = 0; i < WINDOW_SIZE; i++) {
-            window[i].seq = -1;
-        }
-    }
+    Window window;
+    init_window(&window);
 
     for (;;) {
-        char buf[SEQ_NUMBER_SIZE + WINDOW_SIZE + 1];
+        char buf[SEQ_NUMBER_SIZE + MESSAGE_SIZE + 1];
         int seq;
         ssize_t n;
         struct sockaddr_storage addr;
         socklen_t addrLen = sizeof(addr);
 
-        // receive frame
+        /* receive frame */
         n = recvfrom(listenSocket, buf, sizeof(buf), 0, (struct sockaddr*) &addr, &addrLen);
 
         fprintf(stderr, "Received %s from %s\n", hexdump(buf, n),
@@ -114,22 +102,19 @@ void run_server(int listenSocket) {
         fprintf(stderr, "Got frame with seq %d\n", seq);
 
         if (seq >= waitingForSeq && seq < waitingForSeq + WINDOW_SIZE) {
-            /* save to the window */
-            if (window[seq % WINDOW_SIZE].seq != seq) {
+            if (! window_has_seq(&window, seq)) {
                 fprintf(stderr, "Saving seq %d to the window\n", seq);
-                window[seq % WINDOW_SIZE].seq = seq;
-                window[seq % WINDOW_SIZE].length = n-SEQ_NUMBER_SIZE;
-                memcpy(window[seq % WINDOW_SIZE].message, buf+SEQ_NUMBER_SIZE, n-SEQ_NUMBER_SIZE);
+                window_store(&window, seq, buf+SEQ_NUMBER_SIZE, n-SEQ_NUMBER_SIZE);
             }
         }
 
-        while (window[waitingForSeq % WINDOW_SIZE].seq == waitingForSeq) {
-            fwrite(window[waitingForSeq % WINDOW_SIZE].message, window[waitingForSeq % WINDOW_SIZE].length, 1, stdout);
-            fflush(stdout);
+        while (window_has_seq(&window, waitingForSeq)) {
+            window_print_message(&window, waitingForSeq, stdout);
             waitingForSeq++;
         }
+        fflush(stdout);
 
-        // send ACK
+        /* send ACK */
         {
             char ackBuf[SEQ_NUMBER_SIZE];
             write_seq(ackBuf, waitingForSeq);
