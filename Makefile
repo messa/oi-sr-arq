@@ -7,7 +7,7 @@ clean:
 	rm -vf client server *.o
 
 # programs to build
-client: client.o networking.o
+client: client.o networking.o window.o
 
 server: server.o networking.o window.o
 
