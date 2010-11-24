@@ -67,13 +67,18 @@ int udp_client_socket(const char *host, const char *port) {
 
     e = getaddrinfo(host, port, &hints, &result);
     if (e != 0) {
-        fprintf(stderr, "getaddrinf: %s\n", gai_strerror(e));
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(e));
         exit(EXIT_FAILURE);
     }
 
     for (r = result; r != NULL; r = r->ai_next) {
         int s = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
         if (s == -1) {
+            continue;
+        }
+
+        if (connect(s, r->ai_addr, r->ai_addrlen) != 0) {
+            close(s);
             continue;
         }
 
