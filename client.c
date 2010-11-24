@@ -8,8 +8,11 @@ Authors: Petr Messner, Jan Fabian
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/select.h>
 
+#include "configuration.h"
 #include "networking.h"
+#include "window.h"
 
 
 static void print_usage(const char *programName, FILE *out) {
@@ -52,6 +55,62 @@ static void process_arguments(int argc, char *argv[], const char **host, const c
 }
 
 
+int max(int a, int b) {
+    if (a > b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+
+void run_client(int s) {
+    int serverWaitingForSeq = 0;
+    int seqToFill = 0;
+
+    Window window;
+    init_window(&window);
+
+    for (;;) {
+        int n;
+        int maxFd = 0;
+        fd_set rdset, wrset;
+        FD_ZERO(&rdset);
+        FD_ZERO(&wrset);
+
+        /* budeme cekat na data ze site */
+        FD_SET(s, &rdset);
+        maxFd = max(maxFd, s);
+
+        if (seqToFill < serverWaitingForSeq + WINDOW_SIZE) {
+            /* cekame na standardni vstup, abychom naplnili okno */
+            FD_SET(0, &rdset);
+            maxFd = max(maxFd, 0);
+        }
+
+        n = select(maxFd+1, &rdset, &wrset, NULL, NULL);
+
+        if (n == -1) {
+            perror("select");
+            exit(EXIT_FAILURE);
+        }
+
+        if (FD_ISSET(0, &rdset)) {
+            /* precteme data ze standardniho vstupu a ulozime do okna a odesleme je */
+        }
+
+        if (FD_ISSET(s, &rdset)) {
+            /* prislo neco po siti (zrejme potvrzeni) - prijmeme to (recv, read...) */
+            /* zvednout serverWaitingForSeq, pokud cislo, ktere prijde, bude vyssi */
+            /*   + smazat z okna to, co uz bylo potvrzeno */
+
+            /*  + odeslani prvniho ramce v okne */
+        }
+
+    }
+}
+
+
 
 int main(int argc, char *argv[]) {
     const char *host = NULL;
@@ -64,9 +123,6 @@ int main(int argc, char *argv[]) {
 
     s = udp_client_socket(host, port);
 
-
-
-
-
+    run_client(s);
 }
 
