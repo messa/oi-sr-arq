@@ -7,6 +7,8 @@
 
 extern int udp_server_socket(const char *host, const char *port);
 
+extern int udp_client_socket(const char *host, const char *port);
+
 
 /*
  * Get human-readable address and service (port) from given sockaddr.

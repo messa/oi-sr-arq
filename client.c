@@ -9,6 +9,8 @@ Authors: Petr Messner, Jan Fabian
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "networking.h"
+
 
 static void print_usage(const char *programName, FILE *out) {
     fprintf(out, "Usage: %s [<options>] <host> <port>\n", programName);
@@ -19,7 +21,7 @@ static void print_help(const char *programName) {
     print_usage(programName, stdout);
     printf("\n");
     printf("Options:\n");
-    printf("  -h            Show this help\n");
+    printf("  -h  Show this help\n");
 }
 
 
@@ -54,8 +56,17 @@ static void process_arguments(int argc, char *argv[], const char **host, const c
 int main(int argc, char *argv[]) {
     const char *host = NULL;
     const char *port = NULL;
+    int s;
 
     process_arguments(argc, argv, &host, &port);
 
-    fprintf(stderr, "Connecting to %s %s\n", host, port);
+    fprintf(stderr, "Connecting to %s %s...\n", host, port);
+
+    s = udp_client_socket(host, port);
+
+
+
+
+
 }
+
