@@ -74,6 +74,7 @@ void run_client(int s) {
     for (;;) {
         int n;
         int maxFd = 0;
+		char buf[100];
         fd_set rdset, wrset;
         FD_ZERO(&rdset);
         FD_ZERO(&wrset);
@@ -96,7 +97,7 @@ void run_client(int s) {
         }
 
         if (FD_ISSET(0, &rdset)) {
-            /* precteme data ze standardniho vstupu a ulozime do okna a odesleme je */
+			int n = read(ffd, buf, 100);
         }
 
         if (FD_ISSET(s, &rdset)) {
