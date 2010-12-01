@@ -10,6 +10,7 @@ Authors: Petr Messner, Jan Fabian
 #include <string.h>
 #include <unistd.h>
 #include <sys/select.h>
+#include <sys/time.h>
 
 #include "configuration.h"
 #include "networking.h"
@@ -89,6 +90,7 @@ static void send_frame(int s, Window *window, int seq) {
 void run_client(int s) {
     int serverWaitingForSeq = 0;
     int seqToFill = 0;
+    struct timeval lastTime;
 
     Window window;
     init_window(&window);
@@ -97,6 +99,7 @@ void run_client(int s) {
         int n;
         int maxFd = 0;
         fd_set rdset, wrset;
+        struct timeval selectTimeout;
         FD_ZERO(&rdset);
         FD_ZERO(&wrset);
 
@@ -110,7 +113,9 @@ void run_client(int s) {
             maxFd = max(maxFd, 0);
         }
 
-        n = select(maxFd+1, &rdset, &wrset, NULL, NULL);
+        selectTimeout.tv_sec = TIMEOUT / 1000;
+        selectTimeout.tv_usec = (TIMEOUT % 1000) * 1000;
+        n = select(maxFd+1, &rdset, &wrset, NULL, &selectTimeout);
 
         if (n == -1) {
             perror("select");
@@ -129,6 +134,7 @@ void run_client(int s) {
             window_store(&window, seqToFill, buf, n);
 
             send_frame(s, &window, seqToFill);
+            gettimeofday(&lastTime, NULL);
 
             seqToFill ++;
         }
@@ -152,8 +158,20 @@ void run_client(int s) {
                 } else if (seq + 1 == serverWaitingForSeq) {
                     /* server potvrzuje neco, co uz potvrdil; posleme znovu prvni
                        ramec z okna */
-                   send_frame(s, &window, serverWaitingForSeq);
+                    send_frame(s, &window, serverWaitingForSeq);
+                    gettimeofday(&lastTime, NULL);
                 }
+            }
+        }
+
+        if (serverWaitingForSeq != seqToFill) {  /* je neco k odeslani */
+            struct timeval now;
+            gettimeofday(&now, NULL);
+            int delta = (now.tv_sec - lastTime.tv_sec) * 1000; /* in miliseconds */
+            delta += (now.tv_usec - lastTime.tv_usec) / 1000;
+            if (delta > TIMEOUT) {
+                send_frame(s, &window, serverWaitingForSeq);
+                gettimeofday(&lastTime, NULL);
             }
         }
 

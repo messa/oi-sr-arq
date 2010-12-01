@@ -5,6 +5,7 @@
 
 #define SEQ_NUMBER_SIZE 2
 #define MESSAGE_SIZE 200
+#define TIMEOUT 1000
 
 #define WINDOW_SIZE 8
 

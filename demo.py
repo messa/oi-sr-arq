@@ -7,7 +7,7 @@ Selective Repeat ARQ simulation.
 
 WINDOW_SIZE = 5
 NETWORK_DELAY_TIME = 3
-NETWORK_ERROR_RATE = 0.2
+NETWORK_ERROR_RATE = 0.3
 ACK_WAIT_TIMEOUT = 10
 
 
@@ -132,6 +132,9 @@ class Sender:
         self.ackFramesReceived = 0  # for stats
         self.messageFramesSent = 0
 
+        self.lastTimeSent = self.context.get_time()
+
+
     def add_messages(self, messages):
         self.messagesToSend.extend(messages)
 
@@ -165,7 +168,7 @@ class Sender:
         # is it too long that the not acknowledged frame was sent?
         if not resend and \
             self.window.has(self.receiverWaitingSeq) \
-            and self.window.get(self.receiverWaitingSeq)["lastSent"] < \
+            and self.lastTimeSent < \
                 self.context.get_time() - ACK_WAIT_TIMEOUT:
             self.context.log("Sender: timeout expired; resending")
             resend = True
@@ -190,6 +193,7 @@ class Sender:
             data["lastSent"] = self.context.get_time()
             self.network.send(self.side, self.targetSide, frame)
             self.messageFramesSent += 1
+            self.lastTimeSent = self.context.get_time()
 
 
 class Receiver:
