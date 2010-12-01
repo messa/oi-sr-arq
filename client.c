@@ -7,6 +7,7 @@ Authors: Petr Messner, Jan Fabian
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/select.h>
 
@@ -104,7 +105,7 @@ void run_client(int s) {
                 exit(EXIT_FAILURE);
 		    }
 
-            window_store(window, seqToFill, buf, n);
+            window_store(&window, seqToFill, buf, n);
 
 		    {
                 int r;
@@ -125,9 +126,21 @@ void run_client(int s) {
         if (FD_ISSET(s, &rdset)) {
             /* prislo neco po siti (zrejme potvrzeni) - prijmeme to (recv, read...) */
             /* zvednout serverWaitingForSeq, pokud cislo, ktere prijde, bude vyssi */
-            /*   + smazat z okna to, co uz bylo potvrzeno */
-
             /*  + odeslani prvniho ramce v okne */
+
+            char buf[SEQ_NUMBER_SIZE];
+            int n = read(s, buf, sizeof(buf));
+            if (n == -1) {
+                perror("read");
+                exit(EXIT_FAILURE);
+            }
+            if (n == SEQ_NUMBER_SIZE) {
+                /* je to datagram spravne delky */
+                int seq = read_seq(buf);
+                if (seq >= serverWaitingForSeq) {
+                    serverWaitingForSeq = seq + 1;
+                }
+            }
         }
 
     }
