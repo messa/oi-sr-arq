@@ -65,6 +65,27 @@ int max(int a, int b) {
 }
 
 
+static void send_frame(int s, Window *window, int seq) {
+
+    int n;
+    char buf[SEQ_NUMBER_SIZE + MESSAGE_SIZE];
+
+    if (!window_has_seq(window, seq)) {
+        return;
+    }
+
+    write_seq(buf, seq);
+    memcpy(buf + SEQ_NUMBER_SIZE, window_get_message(window, seq),
+            window_get_message_length(window, seq));
+
+    n = write(s, buf, SEQ_NUMBER_SIZE + window_get_message_length(window, seq));
+    if (n == -1) {
+        perror("write");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
 void run_client(int s) {
     int serverWaitingForSeq = 0;
     int seqToFill = 0;
@@ -107,18 +128,7 @@ void run_client(int s) {
 
             window_store(&window, seqToFill, buf, n);
 
-		    {
-                int r;
-                char buf2[SEQ_NUMBER_SIZE + n];
-                write_seq(buf2, seqToFill);
-                memcpy(buf2 + SEQ_NUMBER_SIZE, buf, n);
-
-                r = write(s, buf2, SEQ_NUMBER_SIZE + n);
-                if (r == -1) {
-                    perror("write");
-                    exit(EXIT_FAILURE);
-                }
-	        }
+            send_frame(s, &window, seqToFill);
 
             seqToFill ++;
         }
@@ -139,6 +149,10 @@ void run_client(int s) {
                 int seq = read_seq(buf);
                 if (seq >= serverWaitingForSeq) {
                     serverWaitingForSeq = seq + 1;
+                } else if (seq + 1 == serverWaitingForSeq) {
+                    /* server potvrzuje neco, co uz potvrdil; posleme znovu prvni
+                       ramec z okna */
+                   send_frame(s, &window, serverWaitingForSeq);
                 }
             }
         }

@@ -23,6 +23,9 @@ extern void window_store(Window *window, int seq, char *message, int messageLeng
 
 extern void window_print_message(Window *window, int seq, FILE *out);
 
+extern const char* window_get_message(Window *window, int seq);
+
+extern int window_get_message_length(Window *window, int seq);
 
 #endif  /* WINDOW_H */
 
