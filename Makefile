@@ -7,16 +7,17 @@ clean:
 	rm -vf client server *.o
 
 # programs to build
-client: client.o networking.o window.o
+client: client.o networking.o window.o util.o
 
-server: server.o networking.o window.o
+server: server.o networking.o window.o util.o
 
 # dependencies to header files
-client.o: networking.h
+client.o: networking.h util.h
 
-server.o: networking.h configuration.h window.h
+server.o: networking.h configuration.h window.h util.h
 
 networking.o: networking.h
 
 window.o: window.h configuration.h
 
+util.o: util.h

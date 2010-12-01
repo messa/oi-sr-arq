@@ -74,7 +74,6 @@ void run_client(int s) {
     for (;;) {
         int n;
         int maxFd = 0;
-		char buf[100];
         fd_set rdset, wrset;
         FD_ZERO(&rdset);
         FD_ZERO(&wrset);
@@ -83,8 +82,8 @@ void run_client(int s) {
         FD_SET(s, &rdset);
         maxFd = max(maxFd, s);
 
+        /* cekame na standardni vstup, pokud neni okno pro odeslani plne */
         if (seqToFill < serverWaitingForSeq + WINDOW_SIZE) {
-            /* cekame na standardni vstup, abychom naplnili okno */
             FD_SET(0, &rdset);
             maxFd = max(maxFd, 0);
         }
@@ -97,7 +96,30 @@ void run_client(int s) {
         }
 
         if (FD_ISSET(0, &rdset)) {
-			int n = read(ffd, buf, 100);
+            /* precteme data ze standardniho vstupu a ulozime do okna a odesleme je */
+    		char buf[MESSAGE_SIZE];
+			int n = read(0, buf, sizeof(buf));
+			if (n == -1) {
+                perror("read");
+                exit(EXIT_FAILURE);
+		    }
+
+            window_store(window, seqToFill, buf, n);
+
+		    {
+                int r;
+                char buf2[SEQ_NUMBER_SIZE + n];
+                write_seq(buf2, seqToFill);
+                memcpy(buf2 + SEQ_NUMBER_SIZE, buf, n);
+
+                r = write(s, buf2, SEQ_NUMBER_SIZE + n);
+                if (r == -1) {
+                    perror("write");
+                    exit(EXIT_FAILURE);
+                }
+	        }
+
+            seqToFill ++;
         }
 
         if (FD_ISSET(s, &rdset)) {
