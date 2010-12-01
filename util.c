@@ -27,3 +27,30 @@ void write_seq(char *buffer, int seq) {
 }
 
 
+#define SEQMOD 100
+#define HALFSEQ 50
+
+
+int seq_lt(int a, int b) {
+    int d = a - b;
+    if ((d < 0 && d > -HALFSEQ) || (d > HALFSEQ)) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+int seq_ge(int a, int b) {
+    int d = a - b;
+    if ((d >= 0 && d < HALFSEQ) || (d < -HALFSEQ)) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+int seq_inc(int seq) {
+    return (seq + 1) % SEQMOD;
+}
+
+

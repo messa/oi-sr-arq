@@ -79,7 +79,8 @@ void run_server(int listenSocket) {
         }
         fprintf(stderr, "Got frame with seq %d\n", seq);
 
-        if (seq >= waitingForSeq && seq < waitingForSeq + WINDOW_SIZE) {
+        if (seq_ge(seq, waitingForSeq) /* seq >= waitingForSeq */ &&
+            seq_lt(seq, waitingForSeq + WINDOW_SIZE) /* seq < waitingForSeq + WINDOW_SIZE */) {
             if (! window_has_seq(&window, seq)) {
                 fprintf(stderr, "Saving seq %d to the window\n", seq);
                 window_store(&window, seq, buf+SEQ_NUMBER_SIZE, n-SEQ_NUMBER_SIZE);
@@ -88,7 +89,7 @@ void run_server(int listenSocket) {
 
         while (window_has_seq(&window, waitingForSeq)) {
             window_print_message(&window, waitingForSeq, stdout);
-            waitingForSeq++;
+            waitingForSeq = seq_inc(waitingForSeq);
         }
         fflush(stdout);
 

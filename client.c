@@ -108,7 +108,7 @@ void run_client(int s) {
         maxFd = max(maxFd, s);
 
         /* cekame na standardni vstup, pokud neni okno pro odeslani plne */
-        if (seqToFill < serverWaitingForSeq + WINDOW_SIZE) {
+        if (seq_lt(seqToFill, serverWaitingForSeq + WINDOW_SIZE)) {
             FD_SET(0, &rdset);
             maxFd = max(maxFd, 0);
         }
@@ -136,7 +136,7 @@ void run_client(int s) {
             send_frame(s, &window, seqToFill);
             gettimeofday(&lastTime, NULL);
 
-            seqToFill ++;
+            seqToFill = seq_inc(seqToFill);
         }
 
         if (FD_ISSET(s, &rdset)) {
@@ -153,9 +153,11 @@ void run_client(int s) {
             if (n == SEQ_NUMBER_SIZE) {
                 /* je to datagram spravne delky */
                 int seq = read_seq(buf);
-                if (seq >= serverWaitingForSeq) {
-                    serverWaitingForSeq = seq + 1;
-                } else if (seq + 1 == serverWaitingForSeq) {
+                if (seq_ge(seq, serverWaitingForSeq) /* seq >= serverWaitingForSeq */) {
+                    while (seq_ge(seq, serverWaitingForSeq)) {
+                        serverWaitingForSeq = seq_inc(serverWaitingForSeq);
+                    }
+                } else if (seq_inc(seq) == serverWaitingForSeq) {
                     /* server potvrzuje neco, co uz potvrdil; posleme znovu prvni
                        ramec z okna */
                     send_frame(s, &window, serverWaitingForSeq);
