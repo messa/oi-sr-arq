@@ -49,7 +49,7 @@ const char* window_get_message(Window *window, int seq) {
 int window_get_message_length(Window *window, int seq) {
     struct WindowItem *wi = &((*window)[seq % WINDOW_SIZE]);
     if (wi->seq != seq) {
-        return NULL;
+        return 0;
     }
     return wi->length;
 }
