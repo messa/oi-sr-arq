@@ -14,7 +14,6 @@
 /*
 TODO:
   - random frame dropping
-  - cycling seq numbers
 */
 
 
