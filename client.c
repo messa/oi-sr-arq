@@ -64,6 +64,7 @@ static void send_frame(int s, Window *window, int seq) {
 
     int n;
     char buf[SEQ_NUMBER_SIZE + MESSAGE_SIZE];
+	int r = rand() % 100;
 
     if (!window_has_seq(window, seq)) {
         return;
@@ -72,12 +73,13 @@ static void send_frame(int s, Window *window, int seq) {
     write_seq(buf, seq);
     memcpy(buf + SEQ_NUMBER_SIZE, window_get_message(window, seq),
             window_get_message_length(window, seq));
-
-    n = write(s, buf, SEQ_NUMBER_SIZE + window_get_message_length(window, seq));
-    if (n == -1) {
-        perror("write");
-        exit(EXIT_FAILURE);
-    }
+	if(r<90) {
+    	n = write(s, buf, SEQ_NUMBER_SIZE + window_get_message_length(window, seq));
+	    if (n == -1) {
+	        perror("write");
+	        exit(EXIT_FAILURE);
+	    }
+	}
 }
 
 
@@ -120,19 +122,15 @@ void run_client(int s) {
             /* precteme data ze standardniho vstupu a ulozime do okna a odesleme je */
             char buf[MESSAGE_SIZE];
             int n = read(0, buf, sizeof(buf));
-			int r = rand() % 100;
             if (n == -1) {
                 perror("read");
                 exit(EXIT_FAILURE);
             }
 
-            window_store(&window, seqToFill, buf, n);
-			if(r<90) {
-            	send_frame(s, &window, seqToFill);
-	            gettimeofday(&lastTime, NULL);
-			
-	            seqToFill = seq_inc(seqToFill);
-			}
+            window_store(&window, seqToFill, buf, n);			
+           	send_frame(s, &window, seqToFill);
+            gettimeofday(&lastTime, NULL);
+            seqToFill = seq_inc(seqToFill);
         }
 
         if (FD_ISSET(s, &rdset)) {
