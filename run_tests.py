@@ -49,7 +49,7 @@ class Communicator:
 
             for n, pipe in enumerate(self._toRead):
                 if pipe is not None and pipe in r:
-                    data = pipe.read(512)
+                    data = os.read(pipe.fileno(), 512)
                     if not data:
                         self._toRead[n] = None
                     else:
