@@ -118,12 +118,12 @@ void run_client(int s) {
 
         if (FD_ISSET(0, &rdset)) {
             /* precteme data ze standardniho vstupu a ulozime do okna a odesleme je */
-    		char buf[MESSAGE_SIZE];
-			int n = read(0, buf, sizeof(buf));
-			if (n == -1) {
+            char buf[MESSAGE_SIZE];
+            int n = read(0, buf, sizeof(buf));
+            if (n == -1) {
                 perror("read");
                 exit(EXIT_FAILURE);
-		    }
+            }
 
             window_store(&window, seqToFill, buf, n);
 
@@ -173,7 +173,6 @@ void run_client(int s) {
 
     }
 }
-
 
 
 int main(int argc, char *argv[]) {
