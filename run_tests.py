@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-TEST_PORT = 9999
+TEST_PORT = "9999"
 
 import unittest
 import select
@@ -100,6 +100,23 @@ class CommunicatorTests (unittest.TestCase):
         p1 = subprocess.Popen(["cat"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         p2 = subprocess.Popen(["cat"], stdin=p1.stdout, stdout=subprocess.PIPE, close_fds=True)
         output = Communicator().write(p1.stdin, data).read(p2.stdout).run()
+        self.assertEqual(output, data)
+
+    def test_cat_cat_long(self):
+        data = 1024 * 1024 * "foobar"
+        p1 = subprocess.Popen(["cat"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        p2 = subprocess.Popen(["cat"], stdin=p1.stdout, stdout=subprocess.PIPE, close_fds=True)
+        output = Communicator().write(p1.stdin, data).read(p2.stdout).run()
+        self.assertEqual(output, data)
+
+
+class TransferTests (unittest.TestCase):
+
+    def test_one(self):
+        data = "Hello"
+        server = subprocess.Popen(["./server", TEST_PORT], stdout=subprocess.PIPE)
+        client = subprocess.Popen(["./client", "127.0.0.1", TEST_PORT], stdin=subprocess.PIPE)
+        output = Communicator().write(client.stdin, data).read(server.stdout).run()
         self.assertEqual(output, data)
 
 

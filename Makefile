@@ -2,6 +2,9 @@
 # default target
 all: client server
 
+check: client server
+	./run_tests.py
+
 # target for removing all temporary files
 clean:
 	rm -vf client server *.o
@@ -21,3 +24,4 @@ networking.o: networking.h
 window.o: window.h configuration.h
 
 util.o: util.h
+
