@@ -120,17 +120,19 @@ void run_client(int s) {
             /* precteme data ze standardniho vstupu a ulozime do okna a odesleme je */
             char buf[MESSAGE_SIZE];
             int n = read(0, buf, sizeof(buf));
+			int r = rand() % 100;
             if (n == -1) {
                 perror("read");
                 exit(EXIT_FAILURE);
             }
 
             window_store(&window, seqToFill, buf, n);
-
-            send_frame(s, &window, seqToFill);
-            gettimeofday(&lastTime, NULL);
-
-            seqToFill = seq_inc(seqToFill);
+			if(r<90) {
+            	send_frame(s, &window, seqToFill);
+	            gettimeofday(&lastTime, NULL);
+			
+	            seqToFill = seq_inc(seqToFill);
+			}
         }
 
         if (FD_ISSET(s, &rdset)) {
