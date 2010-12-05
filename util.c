@@ -40,13 +40,20 @@ int seq_lt(int a, int b) {
     }
 }
 
-int seq_ge(int a, int b) {
+int seq_gt(int a, int b) {
     int d = a - b;
-    if ((d >= 0 && d < HALFSEQ) || (d < -HALFSEQ)) {
+    if ((d > 0 && d < HALFSEQ) || (d < -HALFSEQ)) {
         return 1;
     } else {
         return 0;
     }
+}
+
+int seq_ge(int a, int b) {
+    if (a == b) {
+        return 1;
+    }
+    return seq_gt(a, b);
 }
 
 int seq_inc(int seq) {

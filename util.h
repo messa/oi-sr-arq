@@ -17,9 +17,13 @@ extern void write_seq(char *buffer, int seq);
 
 /**
  * Return 1 if sequence number a < b, else 0.
- *
  */
 extern int seq_lt(int a, int b);
+
+/**
+ * Return 1 if sequence number a > b, else 0.
+ */
+extern int seq_gt(int a, int b);
 
 /**
  * Return 1 if sequence number a >= b, else 0.

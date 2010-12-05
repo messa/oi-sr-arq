@@ -147,11 +147,11 @@ void run_client(int s) {
             if (n == SEQ_NUMBER_SIZE) {
                 /* je to datagram spravne delky */
                 int seq = read_seq(buf);
-                if (seq_ge(seq, serverWaitingForSeq) /* seq >= serverWaitingForSeq */) {
-                    while (seq_ge(seq, serverWaitingForSeq)) {
+                if (seq_gt(seq, serverWaitingForSeq) /* seq > serverWaitingForSeq */) {
+                    while (seq_gt(seq, serverWaitingForSeq)) {
                         serverWaitingForSeq = seq_inc(serverWaitingForSeq);
                     }
-                } else if (seq_inc(seq) == serverWaitingForSeq) {
+                } else if (seq == serverWaitingForSeq) {
                     /* server potvrzuje neco, co uz potvrdil; posleme znovu prvni
                        ramec z okna */
                     send_frame(s, &window, serverWaitingForSeq);
