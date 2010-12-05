@@ -196,5 +196,6 @@ int main(int argc, char *argv[]) {
     s = udp_client_socket(host, port);
 
     run_client(s);
+    exit(EXIT_SUCCESS);
 }
 

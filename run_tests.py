@@ -2,9 +2,11 @@
 
 TEST_PORT = "9999"
 
-import unittest
+import os
 import select
+import signal
 import subprocess
+import unittest
 from StringIO import StringIO
 
 
@@ -112,12 +114,31 @@ class CommunicatorTests (unittest.TestCase):
 
 class TransferTests (unittest.TestCase):
 
-    def test_one(self):
-        data = "Hello"
+    def _transfer(self, data):
         server = subprocess.Popen(["./server", TEST_PORT], stdout=subprocess.PIPE)
-        client = subprocess.Popen(["./client", "127.0.0.1", TEST_PORT], stdin=subprocess.PIPE)
-        output = Communicator().write(client.stdin, data).read(server.stdout).run()
-        self.assertEqual(output, data)
+        try:
+            client = subprocess.Popen(["./client", "127.0.0.1", TEST_PORT], stdin=subprocess.PIPE)
+            output = Communicator().write(client.stdin, data).read(server.stdout).run()
+            self.assertEqual(output, data)
+            self.assertEqual(client.wait(), 0)
+        finally:
+            os.kill(server.pid, signal.SIGKILL)
+            server.wait()
+
+    def test_hello(self):
+        self._transfer("Hello")
+
+    def test_zero(self):
+        self._transfer("")
+
+    def test_one(self):
+        self._transfer("X")
+
+    def test_kilo(self):
+        self._transfer("".join(chr(i%256) for i in range (1024)))
+
+    def test_mega(self):
+        self._transfer("".join(chr(i%256) for i in range (1024 * 1024)))
 
 
 if __name__ == "__main__":
