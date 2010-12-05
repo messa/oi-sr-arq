@@ -47,7 +47,7 @@ class Communicator:
 
             for n, pipe in enumerate(self._toRead):
                 if pipe is not None and pipe in r:
-                    data = pipe.read(1)
+                    data = pipe.read(512)
                     if not data:
                         self._toRead[n] = None
                     else:
@@ -58,6 +58,7 @@ class Communicator:
                     if blocks:
                         data = blocks.pop(0)
                         pipe.write(data)
+                        pipe.flush()
                     else:
                         pipe.close()
                         self._toWrite = [(p, b) for p, b in self._toWrite if p is not pipe]
@@ -97,7 +98,7 @@ class CommunicatorTests (unittest.TestCase):
     def test_cat_cat_short(self):
         data = "foobar"
         p1 = subprocess.Popen(["cat"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        p2 = subprocess.Popen(["cat"], stdin=p1.stdout, stdout=subprocess.PIPE)
+        p2 = subprocess.Popen(["cat"], stdin=p1.stdout, stdout=subprocess.PIPE, close_fds=True)
         output = Communicator().write(p1.stdin, data).read(p2.stdout).run()
         self.assertEqual(output, data)
 
