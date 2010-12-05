@@ -88,6 +88,9 @@ void run_server(int listenSocket) {
 
         while (window_has_seq(&window, waitingForSeq)) {
             window_print_message(&window, waitingForSeq, stdout);
+            if (window_get_message_length(&window, waitingForSeq) == 0) {
+                fclose(stdout);
+            }
             waitingForSeq = seq_inc(waitingForSeq);
         }
         fflush(stdout);

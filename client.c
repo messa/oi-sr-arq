@@ -86,6 +86,7 @@ static void send_frame(int s, Window *window, int seq) {
 void run_client(int s) {
     int serverWaitingForSeq = 0;
     int seqToFill = 0;
+    int stdinClosed = 0;
     struct timeval lastTime;
 
     Window window;
@@ -104,7 +105,7 @@ void run_client(int s) {
         maxFd = max(maxFd, s);
 
         /* cekame na standardni vstup, pokud neni okno pro odeslani plne */
-        if (seq_lt(seqToFill, serverWaitingForSeq + WINDOW_SIZE)) {
+        if (!stdinClosed && seq_lt(seqToFill, serverWaitingForSeq + WINDOW_SIZE)) {
             FD_SET(0, &rdset);
             maxFd = max(maxFd, 0);
         }
@@ -125,6 +126,10 @@ void run_client(int s) {
             if (n == -1) {
                 perror("read");
                 exit(EXIT_FAILURE);
+            }
+
+            if (n == 0) {
+                stdinClosed = 1;
             }
 
             window_store(&window, seqToFill, buf, n);
@@ -150,6 +155,10 @@ void run_client(int s) {
                 if (seq_gt(seq, serverWaitingForSeq) /* seq > serverWaitingForSeq */) {
                     while (seq_gt(seq, serverWaitingForSeq)) {
                         serverWaitingForSeq = seq_inc(serverWaitingForSeq);
+                    }
+                    if (stdinClosed && serverWaitingForSeq == seqToFill) {
+                        /* transfer finished successfully */
+                        break;
                     }
                 } else if (seq == serverWaitingForSeq) {
                     /* server potvrzuje neco, co uz potvrdil; posleme znovu prvni
