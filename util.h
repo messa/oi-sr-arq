@@ -35,5 +35,9 @@ extern int seq_ge(int a, int b);
  */
 extern int seq_inc(int);
 
+/*
+* generate random number between 0 and 100
+*/
+extern int random_number();
 
 #endif  /* UTIL_H */

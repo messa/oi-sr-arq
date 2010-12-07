@@ -98,8 +98,12 @@ void run_server(int listenSocket) {
         /* send ACK */
         {
             char ackBuf[SEQ_NUMBER_SIZE];
+			
             write_seq(ackBuf, waitingForSeq);
-            n = sendto(listenSocket, ackBuf, sizeof(ackBuf), 0, (struct sockaddr*) &addr, addrLen);
+			
+			if(random_number()<PROBABILITY) {
+            	n = sendto(listenSocket, ackBuf, sizeof(ackBuf), 0, (struct sockaddr*) &addr, addrLen);
+			}
         }
     }
 }

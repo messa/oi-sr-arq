@@ -60,4 +60,7 @@ int seq_inc(int seq) {
     return (seq + 1) % SEQMOD;
 }
 
-
+int random_number() {
+	int r = rand() % 100;
+	return r;
+}

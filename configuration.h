@@ -8,6 +8,7 @@
 #define TIMEOUT 1000
 
 #define WINDOW_SIZE 8
+#define PROBABILITY 90
 
 
 #endif /* CONFIGURATION_H */

@@ -64,7 +64,6 @@ static void send_frame(int s, Window *window, int seq) {
 
     int n;
     char buf[SEQ_NUMBER_SIZE + MESSAGE_SIZE];
-    int r = rand() % 100;
 
     if (!window_has_seq(window, seq)) {
         return;
@@ -73,7 +72,7 @@ static void send_frame(int s, Window *window, int seq) {
     write_seq(buf, seq);
     memcpy(buf + SEQ_NUMBER_SIZE, window_get_message(window, seq),
             window_get_message_length(window, seq));
-    if(r<90) {
+    if(random_number()<PROBABILITY) {
         n = write(s, buf, SEQ_NUMBER_SIZE + window_get_message_length(window, seq));
         if (n == -1) {
             perror("write");
