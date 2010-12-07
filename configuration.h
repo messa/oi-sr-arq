@@ -1,3 +1,9 @@
+/*
+This project was created within course Operating Systems and Networks
+at FEE CTU, fall semester 2010/2011.
+
+Authors: Petr Messner, Jan Fabian
+*/
 
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H

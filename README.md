@@ -1,11 +1,3 @@
-/*
-This project was created within course Operating Systems and Networks
-at FEE CTU, fall semester 2010/2011.
-
-Authors: Petr Messner, Jan Fabian
-*/
-
-
  School project: Implementation of Selective Repeat ARQ using UDP in C on Unix
 ===============================================================================
 
