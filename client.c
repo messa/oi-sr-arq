@@ -78,7 +78,7 @@ static void send_frame(int s, Window *window, int seq) {
     write_seq(buf, seq);
     memcpy(buf + SEQ_NUMBER_SIZE, window_get_message(window, seq),
             window_get_message_length(window, seq));
-    if(random_number()<PROBABILITY) {
+    if (random_number() < PROBABILITY) {
         n = write(s, buf, SEQ_NUMBER_SIZE + window_get_message_length(window, seq));
         if (n == -1) {
             perror("write");

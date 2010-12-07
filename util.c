@@ -67,6 +67,7 @@ int seq_inc(int seq) {
 }
 
 int random_number() {
-	int r = rand() % 100;
-	return r;
+    int r = rand() % 100;
+    return r;
 }
+
