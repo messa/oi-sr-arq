@@ -44,7 +44,7 @@ static char* hexdump(const char *ptr, int size) {
 }
 
 
-void run_server(int listenSocket) {
+void run_server(int listenSocket, int verbosity) {
     int waitingForSeq = 0;
 
     Window window;
@@ -60,8 +60,10 @@ void run_server(int listenSocket) {
         /* receive frame */
         n = recvfrom(listenSocket, buf, sizeof(buf), 0, (struct sockaddr*) &addr, &addrLen);
 
-        fprintf(stderr, "Received %s from %s\n", hexdump(buf, n),
-            name_from_addr((struct sockaddr *) &addr, addrLen));
+        if (verbosity > 1) {
+            fprintf(stderr, "Received %s from %s\n", hexdump(buf, n),
+                name_from_addr((struct sockaddr *) &addr, addrLen));
+        }
 
         if (n < SEQ_NUMBER_SIZE) {
             fprintf(stderr, "Frame is too short\n");
@@ -77,12 +79,16 @@ void run_server(int listenSocket) {
             fprintf(stderr, "Invalid seq\n");
             continue;
         }
-        fprintf(stderr, "Got frame with seq %d\n", seq);
+        if (verbosity > 0) {
+            fprintf(stderr, "Got frame with seq %d\n", seq);
+        }
 
         if (seq_ge(seq, waitingForSeq) /* seq >= waitingForSeq */ &&
             seq_lt(seq, waitingForSeq + WINDOW_SIZE) /* seq < waitingForSeq + WINDOW_SIZE */) {
             if (! window_has_seq(&window, seq)) {
-                fprintf(stderr, "Saving seq %d to the window\n", seq);
+                if (verbosity > 0) {
+                    fprintf(stderr, "Saving seq %d to the window\n", seq);
+                }
                 window_store(&window, seq, buf+SEQ_NUMBER_SIZE, n-SEQ_NUMBER_SIZE);
             }
         }
@@ -113,6 +119,7 @@ void run_server(int listenSocket) {
 struct ServerOptions {
     const char *host;
     const char *port;
+    int verbosity;
 };
 
 
@@ -124,11 +131,12 @@ int main(int argc, char *argv[]) {
     memset(&options, 0, sizeof(options));
     options.host = NULL;
     options.port = NULL;
+    options.verbosity = 0;
 
     process_arguments(argc, argv, &options);
 
     int s = udp_server_socket(options.host, options.port);
-    run_server(s);
+    run_server(s, options.verbosity);
 
     return 0;
 }
@@ -145,6 +153,7 @@ static void print_help(const char *programName) {
     printf("Options:\n");
     printf("  -h            Show this help\n");
     printf("  -b <address>  Bind to a specific address\n");
+    printf("  -v            Be more verbose; can be used multiple times\n");
 }
 
 
@@ -152,7 +161,7 @@ static void process_arguments(int argc, char *argv[],
                               struct ServerOptions *options)
 {
     int ch;
-    while ((ch = getopt(argc, argv, "hb:")) != -1) {
+    while ((ch = getopt(argc, argv, "hb:v")) != -1) {
         switch (ch) {
             case 'h':
                 print_help(argv[0]);
@@ -160,6 +169,9 @@ static void process_arguments(int argc, char *argv[],
                 break;
             case 'b':
                 options->host = optarg;
+                break;
+            case 'v':
+                options->verbosity++;
                 break;
             case '?':
             default:
