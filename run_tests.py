@@ -15,6 +15,10 @@ def _split_blocks(s, length=512):
 
 
 class Communicator:
+    """
+    Reading and writing standard output/input of multiple processes.
+    For easier testing of server/client applications.
+    """
 
     def __init__(self):
         self._toRead = list()
@@ -139,6 +143,9 @@ class TransferTests (unittest.TestCase):
 
     def test_mega(self):
         self._transfer("".join(chr(i%256) for i in range (1024 * 1024)))
+
+    def test_10mega(self):
+        self._transfer("".join(chr(i%256) for i in range (10 * 1024 * 1024)))
 
 
 if __name__ == "__main__":
