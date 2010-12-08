@@ -16,6 +16,10 @@ Authors: Petr Messner, Jan Fabian
 #define WINDOW_SIZE 8
 #define PROBABILITY 90
 
+/* Whether to use human readable and readable sequence numbers, so the server
+and client are easily testable from tools like netcat */
+#define USE_NICE_SEQ
+
 
 #endif /* CONFIGURATION_H */
 
