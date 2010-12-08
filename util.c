@@ -36,7 +36,7 @@ void write_seq(char *buffer, int seq) {
         buffer[i] = (seq % 10) + '0';
         seq /= 10;
     #else
-        buffer[i] = seq % 0xFF;
+        buffer[i] = seq & 0xFF;
         seq >>= 8;
     #endif
     }
