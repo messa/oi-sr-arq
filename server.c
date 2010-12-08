@@ -27,6 +27,7 @@ static char* hexdump(const char *ptr, int size) {
     int i;
     memset(&buf, 0, sizeof(buf));
     for (i = 0; i < size; i++) {
+        int n;
         if (pos > sizeof(buf) - 10) {
             buf[pos++] = '.';
             buf[pos++] = '.';
@@ -36,7 +37,7 @@ static char* hexdump(const char *ptr, int size) {
         if (i > 0) {
             buf[pos++] = ' ';
         }
-        int n = snprintf(buf + pos, sizeof(buf) - pos, "%02x", (unsigned char) ptr[i]);
+        n = snprintf(buf + pos, sizeof(buf) - pos, "%02x", (unsigned char) ptr[i]);
         pos += n;
     }
     buf[pos] = '\0';
@@ -127,6 +128,7 @@ static void process_arguments(int argc, char *argv[], struct ServerOptions *);
 
 
 int main(int argc, char *argv[]) {
+    int s;
     struct ServerOptions options;
     memset(&options, 0, sizeof(options));
     options.host = NULL;
@@ -135,7 +137,7 @@ int main(int argc, char *argv[]) {
 
     process_arguments(argc, argv, &options);
 
-    int s = udp_server_socket(options.host, options.port);
+    s = udp_server_socket(options.host, options.port);
     run_server(s, options.verbosity);
 
     return 0;

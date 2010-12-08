@@ -1,4 +1,7 @@
 
+# report more warnings
+CFLAGS=-Wall -pedantic
+
 # default target
 all: client server
 

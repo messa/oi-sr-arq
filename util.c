@@ -7,6 +7,8 @@ Authors: Petr Messner, Jan Fabian
 
 #include "util.h"
 
+#include <stdlib.h>
+
 #include "configuration.h"
 
 

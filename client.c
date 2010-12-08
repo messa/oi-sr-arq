@@ -15,6 +15,7 @@ Authors: Petr Messner, Jan Fabian
 #include "configuration.h"
 #include "networking.h"
 #include "window.h"
+#include "util.h"
 
 
 static void print_usage(const char *programName, FILE *out) {
@@ -176,8 +177,9 @@ void run_client(int s) {
 
         if (serverWaitingForSeq != seqToFill) {  /* je neco k odeslani */
             struct timeval now;
+            int delta;
             gettimeofday(&now, NULL);
-            int delta = (now.tv_sec - lastTime.tv_sec) * 1000; /* in miliseconds */
+            delta = (now.tv_sec - lastTime.tv_sec) * 1000; /* in miliseconds */
             delta += (now.tv_usec - lastTime.tv_usec) / 1000;
             if (delta > TIMEOUT) {
                 send_frame(s, &window, serverWaitingForSeq);

@@ -13,6 +13,7 @@ Authors: Petr Messner, Jan Fabian
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 
 
 int udp_server_socket(const char *host, const char *port) {
